@@ -6,7 +6,9 @@
   "scripts": {
     "build": "nest build",
     "dev": "nest start --watch",
-    "start": "node ."
+    "start": "node .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +23,11 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.12",
     "@nestjs/schematics": "^11.0.9",
+    "@nestjs/testing": "^11.1.9",
     "@types/node": "^24.10.1",
-    "typescript": "^5.9.3"
+    "@vitest/coverage-v8": "^4.0.13",
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.0.13"
   }
 }
