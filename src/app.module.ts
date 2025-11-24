@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { TodoModule } from './todo/todo.module';
 
 @Module({
   imports: [
@@ -9,6 +10,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       synchronize: true,
       autoLoadEntities: true,
     }),
+    TodoModule,
   ],
 })
 export class AppModule {}
