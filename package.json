@@ -2,9 +2,11 @@
   "name": "todo-list-service",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/src/main",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "start": "node ."
   },
   "keywords": [],
   "author": "",
