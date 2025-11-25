@@ -1,2 +1,3 @@
 onlyBuiltDependencies:
   - sqlite3
+minimumReleaseAge: 10080 # 1 week in minutes 
