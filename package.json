@@ -8,7 +8,12 @@
     "dev": "nest start --watch",
     "start": "node .",
     "test": "vitest run --config vitest.config.ts",
-    "test:watch": "vitest --config vitest.config.ts"
+    "test:unit": "vitest run --config vitest.config.ts",
+    "watch:unit": "vitest --config vitest.config.ts",
+    "test:e2e": "vitest run --config vitest.e2e.config.ts",
+    "watch:e2e": "vitest --config vitest.e2e.config.ts",
+    "test:all": "pnpm test:unit && pnpm test:e2e",
+    "check": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
