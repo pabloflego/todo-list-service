@@ -16,6 +16,11 @@ describe('TodoController', () => {
     markDone: ReturnType<typeof vi.fn>;
     markNotDone: ReturnType<typeof vi.fn>;
   };
+  const getFutureDate = () => {
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + 7);
+    return futureDate;
+  };
 
   beforeEach(() => {
     mockTodoService = {
@@ -38,7 +43,7 @@ describe('TodoController', () => {
     it('should create a new todo', async () => {
       const createTodoDto = {
         description: 'Test Todo',
-        dueDatetime: new Date('2025-12-31').toISOString(),
+        dueDatetime: getFutureDate().toISOString(),
       };
       const todo = {
         id: '1',
