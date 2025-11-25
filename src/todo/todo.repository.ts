@@ -18,6 +18,10 @@ export class TodoRepository {
     return this.repo.save(todo);
   }
 
+  saveMany(todos: Todo[]): Promise<Todo[]> {
+    return this.repo.save(todos);
+  }
+
   findById(id: string): Promise<Todo | null> {
     return this.repo.findOne({ where: { id } });
   }

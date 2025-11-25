@@ -67,6 +67,21 @@ describe('TodoRepository', () => {
     });
   });
 
+  describe('saveMany', () => {
+    it('should save multiple todos', async () => {
+      const todos = [
+        { id: '1', description: 'Test 1' } as Todo,
+        { id: '2', description: 'Test 2' } as Todo,
+      ];
+      mockTypeOrmRepository.save.mockResolvedValue(todos);
+
+      const result = await repository.saveMany(todos);
+
+      expect(mockTypeOrmRepository.save).toHaveBeenCalledWith(todos);
+      expect(result).toEqual(todos);
+    });
+  });
+
   describe('findById', () => {
     it('should find a todo by id', async () => {
       const id = '1';
