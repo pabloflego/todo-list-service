@@ -13,7 +13,10 @@
     "test:e2e": "vitest run --config vitest.e2e.config.ts",
     "watch:e2e": "vitest --config vitest.e2e.config.ts",
     "test:all": "pnpm test:unit && pnpm test:e2e",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "docker:build": "VERSION=$(node -p \"require('./package.json').version\") docker-compose build",
+    "docker:up": "VERSION=$(node -p \"require('./package.json').version\") docker-compose up -d",
+    "docker:down": "docker-compose down"
   },
   "keywords": [],
   "author": "",
