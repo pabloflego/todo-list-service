@@ -102,49 +102,38 @@ describe('TodoRepository', () => {
     });
   });
 
-  describe('findByStatus', () => {
+  describe('findBy', () => {
+    it('should find todos with empty predicate (all)', async () => {
+      const todos = [{ id: '1' }] as Todo[];
+      mockTypeOrmRepository.find.mockResolvedValue(todos);
+
+      const result = await repository.findBy({});
+
+      expect(mockTypeOrmRepository.find).toHaveBeenCalledWith({ where: {} });
+      expect(result).toEqual(todos);
+    });
+
     it('should find todos by status', async () => {
       const status = TodoStatus.NOT_DONE;
       const todos = [{ id: '1', status }] as Todo[];
       mockTypeOrmRepository.find.mockResolvedValue(todos);
 
-      const result = await repository.findByStatus(status);
+      const result = await repository.findBy({ status });
 
       expect(mockTypeOrmRepository.find).toHaveBeenCalledWith({ where: { status } });
       expect(result).toEqual(todos);
     });
-  });
 
-  describe('setStatus', () => {
-    it('should update status and save', async () => {
-      const todo = { id: '1', status: TodoStatus.NOT_DONE } as Todo;
-      const newStatus = TodoStatus.DONE;
-      const doneDatetime = new Date();
-      const savedTodo = { ...todo, status: newStatus, doneDatetime } as Todo;
+    it('should find todos by multiple criteria', async () => {
+      const status = TodoStatus.DONE;
+      const id = '1';
+      const todos = [{ id, status }] as Todo[];
+      mockTypeOrmRepository.find.mockResolvedValue(todos);
 
-      mockTypeOrmRepository.save.mockResolvedValue(savedTodo);
+      const result = await repository.findBy({ id, status });
 
-      const result = await repository.setStatus(todo, newStatus, doneDatetime);
-
-      expect(todo.status).toBe(newStatus);
-      expect(todo.doneDatetime).toBe(doneDatetime);
-      expect(mockTypeOrmRepository.save).toHaveBeenCalledWith(todo);
-      expect(result).toEqual(savedTodo);
+      expect(mockTypeOrmRepository.find).toHaveBeenCalledWith({ where: { id, status } });
+      expect(result).toEqual(todos);
     });
-
-    it('should update status without doneDatetime', async () => {
-        const todo = { id: '1', status: TodoStatus.NOT_DONE } as Todo;
-        const newStatus = TodoStatus.PAST_DUE;
-        const savedTodo = { ...todo, status: newStatus, doneDatetime: null } as Todo;
-  
-        mockTypeOrmRepository.save.mockResolvedValue(savedTodo);
-  
-        const result = await repository.setStatus(todo, newStatus);
-  
-        expect(todo.status).toBe(newStatus);
-        expect(todo.doneDatetime).toBeNull();
-        expect(mockTypeOrmRepository.save).toHaveBeenCalledWith(todo);
-        expect(result).toEqual(savedTodo);
-      });
   });
 });

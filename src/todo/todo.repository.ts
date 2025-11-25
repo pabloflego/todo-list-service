@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { Repository } from 'typeorm';
+import type { Repository, FindOptionsWhere } from 'typeorm';
 import { Todo } from './todo.entity';
-import { TodoStatus } from './todo-status.enum';
 
 @Injectable()
 export class TodoRepository {
@@ -27,13 +26,7 @@ export class TodoRepository {
     return this.repo.find();
   }
 
-  findByStatus(status: TodoStatus): Promise<Todo[]> {
-    return this.repo.find({ where: { status } });
-  }
-
-  async setStatus(todo: Todo, status: TodoStatus, doneDatetime?: Date | null): Promise<Todo> {
-    todo.status = status;
-    todo.doneDatetime = doneDatetime ?? null;
-    return this.save(todo);
+  findBy(predicate: FindOptionsWhere<Todo>): Promise<Todo[]> {
+    return this.repo.find({ where: predicate });
   }
 }

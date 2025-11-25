@@ -12,7 +12,7 @@ describe('TodoService', () => {
     save: ReturnType<typeof vi.fn>;
     findById: ReturnType<typeof vi.fn>;
     findAll: ReturnType<typeof vi.fn>;
-    setStatus: ReturnType<typeof vi.fn>;
+    findBy: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe('TodoService', () => {
       save: vi.fn(),
       findById: vi.fn(),
       findAll: vi.fn(),
-      setStatus: vi.fn(),
+      findBy: vi.fn(),
     };
 
     service = new TodoService(mockTodoRepository as unknown as TodoRepository);
@@ -100,8 +100,7 @@ describe('TodoService', () => {
       const result = await service.updateDescription(id, newDescription);
 
       expect(mockTodoRepository.findById).toHaveBeenCalledWith(id);
-      expect(todo.description).toBe(newDescription);
-      expect(mockTodoRepository.save).toHaveBeenCalledWith(todo);
+      expect(mockTodoRepository.save).toHaveBeenCalledWith({ ...todo, description: newDescription });
       expect(result).toEqual(updatedTodo);
     });
 
@@ -122,12 +121,16 @@ describe('TodoService', () => {
       const doneTodo = { ...todo, status: TodoStatus.DONE, doneDatetime: expect.any(Date) } as Todo;
 
       mockTodoRepository.findById.mockResolvedValue(todo);
-      mockTodoRepository.setStatus.mockResolvedValue(doneTodo);
+      mockTodoRepository.save.mockResolvedValue(doneTodo);
 
       const result = await service.markDone(id);
 
       expect(mockTodoRepository.findById).toHaveBeenCalledWith(id);
-      expect(mockTodoRepository.setStatus).toHaveBeenCalledWith(todo, TodoStatus.DONE, expect.any(Date));
+      expect(mockTodoRepository.save).toHaveBeenCalledWith({
+        ...todo,
+        status: TodoStatus.DONE,
+        doneDatetime: expect.any(Date)
+      });
       expect(result).toEqual(doneTodo);
     });
 
@@ -147,12 +150,16 @@ describe('TodoService', () => {
       const notDoneTodo = { ...todo, status: TodoStatus.NOT_DONE, doneDatetime: null } as Todo;
 
       mockTodoRepository.findById.mockResolvedValue(todo);
-      mockTodoRepository.setStatus.mockResolvedValue(notDoneTodo);
+      mockTodoRepository.save.mockResolvedValue(notDoneTodo);
 
       const result = await service.markNotDone(id);
 
       expect(mockTodoRepository.findById).toHaveBeenCalledWith(id);
-      expect(mockTodoRepository.setStatus).toHaveBeenCalledWith(todo, TodoStatus.NOT_DONE, null);
+      expect(mockTodoRepository.save).toHaveBeenCalledWith({
+        ...todo,
+        status: TodoStatus.NOT_DONE,
+        doneDatetime: null
+      });
       expect(result).toEqual(notDoneTodo);
     });
 

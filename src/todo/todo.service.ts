@@ -27,17 +27,16 @@ export class TodoService {
 
   async updateDescription(id: string, description: string): Promise<Todo> {
     const todo = await this.getOne(id);
-    todo.description = description;
-    return this.todoRepo.save(todo);
+    return this.todoRepo.save({...todo, description});
   }
 
   async markDone(id: string): Promise<Todo> {
     const todo = await this.getOne(id);
-    return this.todoRepo.setStatus(todo, TodoStatus.DONE, new Date());
+    return this.todoRepo.save({...todo, status: TodoStatus.DONE, doneDatetime: new Date()});
   }
 
   async markNotDone(id: string): Promise<Todo> {
     const todo = await this.getOne(id);
-    return this.todoRepo.setStatus(todo, TodoStatus.NOT_DONE, null);
+    return this.todoRepo.save({...todo, status: TodoStatus.NOT_DONE, doneDatetime: null});
   }
 }
