@@ -58,13 +58,57 @@ describe('Todo REST API (E2E)', () => {
   });
 
   describe('/todos (GET)', () => {
-    it('should return all todos', async () => {
+    it('should return only NOT_DONE todos by default', async () => {
+      const notDoneResponse = await request(app.getHttpServer())
+        .post('/todos')
+        .send({
+          description: 'Active task default filter',
+          dueDatetime: getFutureDate().toISOString(),
+        });
+
+      const doneTodo = await request(app.getHttpServer())
+        .post('/todos')
+        .send({
+          description: 'Completed task default filter',
+          dueDatetime: getFutureDate().toISOString(),
+        });
+
+      await request(app.getHttpServer())
+        .patch(`/todos/${doneTodo.body.id}/mark-done`)
+        .expect(200);
+
       const response = await request(app.getHttpServer())
         .get('/todos')
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
       expect(response.body.length).toBeGreaterThan(0);
+      expect(response.body.every((t: any) => t.status === TodoStatus.NOT_DONE)).toBe(true);
+      expect(response.body.find((t: any) => t.id === doneTodo.body.id)).toBeUndefined();
+      expect(response.body.find((t: any) => t.id === notDoneResponse.body.id)).toBeDefined();
+    });
+
+    it('should return all todos when all=true', async () => {
+      const doneTodo = await request(app.getHttpServer())
+        .post('/todos')
+        .send({
+          description: 'Completed task include all',
+          dueDatetime: getFutureDate().toISOString(),
+        });
+
+      await request(app.getHttpServer())
+        .patch(`/todos/${doneTodo.body.id}/mark-done`)
+        .expect(200);
+
+      const response = await request(app.getHttpServer())
+        .get('/todos')
+        .query({ all: true })
+        .expect(200);
+
+      const ids = response.body.map((t: any) => t.id);
+      expect(ids).toContain(doneTodo.body.id);
+      expect(response.body.some((t: any) => t.status === TodoStatus.NOT_DONE)).toBe(true);
+      expect(response.body.some((t: any) => t.status === TodoStatus.DONE)).toBe(true);
     });
   });
 
@@ -91,39 +135,6 @@ describe('Todo REST API (E2E)', () => {
       await request(app.getHttpServer())
         .get('/todos/non-existent-id')
         .expect(404);
-    });
-
-    it('should filter todos by status', async () => {
-      await request(app.getHttpServer())
-        .post('/todos')
-        .send({
-          description: 'Active task',
-          dueDatetime: getFutureDate().toISOString(),
-        });
-
-      const doneTodo = await request(app.getHttpServer())
-        .post('/todos')
-        .send({
-          description: 'Completed task',
-          dueDatetime: getFutureDate().toISOString(),
-        });
-      
-      await request(app.getHttpServer())
-        .patch(`/todos/${doneTodo.body.id}/mark-done`);
-
-      const notDoneResponse = await request(app.getHttpServer())
-        .get('/todos')
-        .query({ status: TodoStatus.NOT_DONE })
-        .expect(200);
-
-      expect(notDoneResponse.body.every((t: any) => t.status === TodoStatus.NOT_DONE)).toBe(true);
-
-      const doneResponse = await request(app.getHttpServer())
-        .get('/todos')
-        .query({ status: TodoStatus.DONE })
-        .expect(200);
-
-      expect(doneResponse.body.every((t: any) => t.status === TodoStatus.DONE)).toBe(true);
     });
   });
 

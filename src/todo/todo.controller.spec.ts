@@ -64,7 +64,7 @@ describe('TodoController', () => {
   });
 
   describe('findAll', () => {
-    it('should return all todos', async () => {
+    it('should return not done todos by default', async () => {
       const todos = [
         { id: '1', description: 'Test 1' },
         { id: '2', description: 'Test 2' },
@@ -78,15 +78,17 @@ describe('TodoController', () => {
       expect(result).toEqual(todos);
     });
 
-    it('should filter todos by status', async () => {
-      const status = TodoStatus.NOT_DONE;
-      const todos = [{ id: '1', description: 'Test 1', status }] as Todo[];
+    it('should return all todos when includeAll is true', async () => {
+      const todos = [
+        { id: '1', description: 'Test 1', status: TodoStatus.NOT_DONE },
+        { id: '2', description: 'Test 2', status: TodoStatus.DONE },
+      ] as Todo[];
 
       mockTodoService.getAll.mockResolvedValue(todos);
 
-      const result = await controller.findAll(status);
+      const result = await controller.findAll(true);
 
-      expect(mockTodoService.getAll).toHaveBeenCalledWith(status);
+      expect(mockTodoService.getAll).toHaveBeenCalledWith(true);
       expect(result).toEqual(todos);
     });
   });

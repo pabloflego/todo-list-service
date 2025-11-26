@@ -2,18 +2,19 @@ import {
   Body,
   Controller,
   Get,
+  DefaultValuePipe,
   Param,
   Patch,
   Post,
   Query,
   HttpCode,
   HttpStatus,
+  ParseBoolPipe,
 } from '@nestjs/common';
 import { ApiProperty, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { IsDateString, IsNotEmpty, IsString } from 'class-validator';
 import { TodoService } from './todo.service';
 import { Todo } from './todo.entity';
-import { TodoStatus } from './todo-status.enum';
 
 class CreateTodoDto {
   @ApiProperty({ example: 'Buy groceries' })
@@ -51,9 +52,16 @@ export class TodoController {
   }
 
   @Get()
-  @ApiQuery({ name: 'status', enum: TodoStatus, required: false })
-  async findAll(@Query('status') status?: TodoStatus): Promise<Todo[]> {
-    return this.todoService.getAll(status);
+  @ApiQuery({
+    name: 'all',
+    required: false,
+    description: 'When true, return all todos regardless of status (default: only NOT_DONE)',
+    schema: { type: 'boolean' },
+  })
+  async findAll(
+    @Query('all', new DefaultValuePipe(false), ParseBoolPipe) includeAll?: boolean,
+  ): Promise<Todo[]> {
+    return this.todoService.getAll(includeAll);
   }
 
   @Get(':id')

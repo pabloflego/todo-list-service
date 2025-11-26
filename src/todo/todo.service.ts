@@ -40,11 +40,11 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
     return this.recalculatePastDue(todo);
   }
 
-  async getAll(filterByStatus?: TodoStatus): Promise<Todo[]> {
-    const todos = filterByStatus !== undefined 
-      ? await this.todoRepo.findBy({ status: filterByStatus })
-      : await this.todoRepo.findAll();
-    
+  async getAll(includeAll?: boolean): Promise<Todo[]> {
+    const todos = includeAll
+      ? await this.todoRepo.findAll()
+      : await this.todoRepo.findBy({ status: TodoStatus.NOT_DONE });
+
     return this.updatePastDueBatch(todos);
   }
 

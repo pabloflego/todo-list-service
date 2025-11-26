@@ -93,30 +93,30 @@ describe('TodoService', () => {
   });
 
   describe('getAll', () => {
-    it('should return all todos', async () => {
-      const todos = [
-        { id: '1', description: 'Test 1', status: TodoStatus.DONE, dueDatetime: new Date(Date.now() + 10000) },
-        { id: '2', description: 'Test 2', status: TodoStatus.NOT_DONE, dueDatetime: new Date(Date.now() + 10000) },
-      ] as Todo[];
-
-      mockTodoRepository.findAll.mockResolvedValue(todos);
-
-      const result = await service.getAll();
-
-      expect(mockTodoRepository.findAll).toHaveBeenCalled();
-      expect(result).toEqual(todos);
-    });
-
-    it('should filter todos by status', async () => {
+    it('should return NOT_DONE todos by default', async () => {
       const todos = [
         { id: '1', description: 'Test 1', status: TodoStatus.NOT_DONE, dueDatetime: new Date(Date.now() + 10000) },
       ] as Todo[];
 
       mockTodoRepository.findBy.mockResolvedValue(todos);
 
-      const result = await service.getAll(TodoStatus.NOT_DONE);
+      const result = await service.getAll();
 
       expect(mockTodoRepository.findBy).toHaveBeenCalledWith({ status: TodoStatus.NOT_DONE });
+      expect(result).toEqual(todos);
+    });
+
+    it('should return all todos when includeAll is true', async () => {
+      const todos = [
+        { id: '1', description: 'Test 1', status: TodoStatus.NOT_DONE, dueDatetime: new Date(Date.now() + 10000) },
+        { id: '2', description: 'Test 2', status: TodoStatus.DONE, dueDatetime: new Date(Date.now() + 10000) },
+      ] as Todo[];
+
+      mockTodoRepository.findAll.mockResolvedValue(todos);
+
+      const result = await service.getAll(true);
+
+      expect(mockTodoRepository.findAll).toHaveBeenCalled();
       expect(result).toEqual(todos);
     });
 
@@ -130,7 +130,7 @@ describe('TodoService', () => {
       mockTodoRepository.findAll.mockResolvedValue(todos);
       mockTodoRepository.saveMany.mockResolvedValue([{ ...todos[0], status: TodoStatus.PAST_DUE }]);
 
-      const result = await service.getAll();
+      const result = await service.getAll(true);
 
       expect(mockTodoRepository.saveMany).toHaveBeenCalledWith([
         expect.objectContaining({
@@ -158,7 +158,7 @@ describe('TodoService', () => {
         { ...todos[1], status: TodoStatus.PAST_DUE }
       ]);
 
-      const result = await service.getAll();
+      const result = await service.getAll(true);
 
       expect(result).toHaveLength(4);
       expect(result[0]).toEqual({ ...todos[0], status: TodoStatus.PAST_DUE });
