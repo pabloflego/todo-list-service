@@ -8,7 +8,6 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.spec.ts'],
     exclude: ['dist/**'],
-    setupFiles: ['reflect-metadata'],
     coverage: { provider: 'v8', reportsDirectory: './coverage' },
   },
 });
