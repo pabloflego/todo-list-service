@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { TodoController } from './todo.controller';
 import { TodoService } from './todo.service';
 import { Todo } from './todo.entity';
@@ -75,7 +74,19 @@ describe('TodoController', () => {
 
       const result = await controller.findAll();
 
-      expect(mockTodoService.getAll).toHaveBeenCalled();
+      expect(mockTodoService.getAll).toHaveBeenCalledWith(undefined);
+      expect(result).toEqual(todos);
+    });
+
+    it('should filter todos by status', async () => {
+      const status = TodoStatus.NOT_DONE;
+      const todos = [{ id: '1', description: 'Test 1', status }] as Todo[];
+
+      mockTodoService.getAll.mockResolvedValue(todos);
+
+      const result = await controller.findAll(status);
+
+      expect(mockTodoService.getAll).toHaveBeenCalledWith(status);
       expect(result).toEqual(todos);
     });
   });
