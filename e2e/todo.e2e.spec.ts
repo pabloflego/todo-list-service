@@ -26,6 +26,16 @@ describe('Todo REST API (E2E)', () => {
     await app.close();
   });
 
+  describe('/health (GET)', () => {
+    it('should return ok with db up', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/health')
+        .expect(200);
+
+      expect(res.body).toEqual({ status: 'ok', db: 'up' });
+    });
+  });
+
   describe('/todos (POST)', () => {
     it('should create a new todo', async () => {
       const createTodoDto = {
