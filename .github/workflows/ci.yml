@@ -34,7 +34,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/coverage-summary.json
+          files: ./coverage/lcov.info
 
       - name: E2E tests
         run: pnpm test:e2e
