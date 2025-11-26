@@ -7,7 +7,7 @@ Backend service built with NestJS and TypeORM (SQLite) to manage to-do items wit
 ## Tech Stack
 - Runtime: Node.js (see `.nvmrc` for version)
 - Framework: NestJS (HTTP + Swagger)
-- Persistence: SQLite (in-memory by default via TypeORM)
+- Persistence: SQLite (in-memory by default via TypeORM); chosen over H2 to stay aligned with the Node.js/TypeORM ecosystem—adding H2 would introduce extra setup complexity without benefits here.
 - Testing: Vitest (unit + e2e), Supertest
 - Docker: Multi-stage build, prod image runs compiled app
 
