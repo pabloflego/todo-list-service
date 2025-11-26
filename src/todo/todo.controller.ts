@@ -5,11 +5,13 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { TodoService } from './todo.service';
 import { Todo } from './todo.entity';
+import { TodoStatus } from './todo-status.enum';
 
 class CreateTodoDto {
   description: string;
@@ -34,8 +36,8 @@ export class TodoController {
   }
 
   @Get()
-  async findAll(): Promise<Todo[]> {
-    return this.todoService.getAll();
+  async findAll(@Query('status') status?: TodoStatus): Promise<Todo[]> {
+    return this.todoService.getAll(status);
   }
 
   @Get(':id')

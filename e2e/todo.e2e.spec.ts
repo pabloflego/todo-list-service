@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -82,6 +81,39 @@ describe('Todo REST API (E2E)', () => {
       await request(app.getHttpServer())
         .get('/todos/non-existent-id')
         .expect(404);
+    });
+
+    it('should filter todos by status', async () => {
+      await request(app.getHttpServer())
+        .post('/todos')
+        .send({
+          description: 'Active task',
+          dueDatetime: getFutureDate().toISOString(),
+        });
+
+      const doneTodo = await request(app.getHttpServer())
+        .post('/todos')
+        .send({
+          description: 'Completed task',
+          dueDatetime: getFutureDate().toISOString(),
+        });
+      
+      await request(app.getHttpServer())
+        .patch(`/todos/${doneTodo.body.id}/mark-done`);
+
+      const notDoneResponse = await request(app.getHttpServer())
+        .get('/todos')
+        .query({ status: TodoStatus.NOT_DONE })
+        .expect(200);
+
+      expect(notDoneResponse.body.every((t: any) => t.status === TodoStatus.NOT_DONE)).toBe(true);
+
+      const doneResponse = await request(app.getHttpServer())
+        .get('/todos')
+        .query({ status: TodoStatus.DONE })
+        .expect(200);
+
+      expect(doneResponse.body.every((t: any) => t.status === TodoStatus.DONE)).toBe(true);
     });
   });
 
@@ -168,8 +200,8 @@ describe('Todo REST API (E2E)', () => {
     });
   });
 
-  describe('Full workflow', () => {
-    it('should complete a full todo lifecycle', async () => {
+  describe('Business Rules', () => {
+    it('should create, update, mark done and reopen todo', async () => {
       const createResponse = await request(app.getHttpServer())
         .post('/todos')
         .send({
@@ -210,6 +242,55 @@ describe('Todo REST API (E2E)', () => {
         status: TodoStatus.NOT_DONE,
         doneDatetime: null,
       });
+    });
+
+    it('should automatically transition to PAST_DUE when overdue', async () => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/todos')
+        .send({
+          description: 'Overdue task',
+          dueDatetime: pastDate.toISOString(),
+        })
+        .expect(201);
+
+      const todoId = createResponse.body.id;
+
+      const response = await request(app.getHttpServer())
+        .get(`/todos/${todoId}`)
+        .expect(200);
+
+      expect(response.body.status).toBe(TodoStatus.PAST_DUE);
+    });
+
+    it('should prevent modification of PAST_DUE todos', async () => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 1);
+
+      const createResponse = await request(app.getHttpServer())
+        .post('/todos')
+        .send({
+          description: 'Immutable task',
+          dueDatetime: pastDate.toISOString(),
+        })
+        .expect(201);
+
+      const todoId = createResponse.body.id;
+
+      await request(app.getHttpServer())
+        .patch(`/todos/${todoId}/description`)
+        .send({ description: 'New description' })
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .patch(`/todos/${todoId}/mark-done`)
+        .expect(400);
+
+      await request(app.getHttpServer())
+        .patch(`/todos/${todoId}/mark-not-done`)
+        .expect(400);
     });
   });
 });
