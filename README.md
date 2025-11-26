@@ -1,4 +1,6 @@
 # Todo List Service
+[![CI](https://img.shields.io/github/actions/workflow/status/pabloflego/todo-list-service/ci.yml?branch=main&label=CI)](https://github.com/pabloflego/todo-list-service/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/pabloflego/todo-list-service/branch/main/graph/badge.svg)](https://codecov.io/gh/pabloflego/todo-list-service)
 
 Backend service built with NestJS and TypeORM (SQLite) to manage to-do items with automatic past-due handling.
 

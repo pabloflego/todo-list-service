@@ -9,6 +9,7 @@
     "start": "node .",
     "test": "vitest run --config vitest.config.mts",
     "test:unit": "vitest run --config vitest.config.mts",
+    "test:unit:coverage": "vitest run --config vitest.config.mts --coverage",
     "watch:unit": "vitest --config vitest.config.mts",
     "test:e2e": "vitest run --config vitest.e2e.config.mts",
     "watch:e2e": "vitest --config vitest.e2e.config.mts",

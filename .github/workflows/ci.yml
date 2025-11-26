@@ -27,8 +27,14 @@ jobs:
       - name: Type check
         run: pnpm check
 
-      - name: Unit tests
-        run: pnpm test:unit
+      - name: Unit test + Coverage
+        run: pnpm test:unit:coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/coverage-summary.json
 
       - name: E2E tests
         run: pnpm test:e2e

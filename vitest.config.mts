@@ -9,6 +9,10 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.spec.ts'],
     exclude: ['dist/**'],
-    coverage: { provider: 'v8', reportsDirectory: './coverage' },
+    coverage: {
+      provider: 'v8',
+      reportsDirectory: './coverage',
+      reporter: ['text', 'json-summary'],
+    },
   },
 });
