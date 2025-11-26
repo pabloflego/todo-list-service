@@ -1,5 +1,5 @@
 export enum TodoStatus {
-  NOT_DONE = 'not done',
-  DONE = 'done',
-  PAST_DUE = 'past due',
+  NOT_DONE = 'NOT_DONE',
+  DONE = 'DONE',
+  PAST_DUE = 'PAST_DUE',
 }

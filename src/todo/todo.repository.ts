@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository, FindOptionsWhere } from 'typeorm';
 import { Todo } from './todo.entity';
+import { TodoStatus } from './todo-status.enum';
 
 @Injectable()
 export class TodoRepository {
@@ -11,7 +12,7 @@ export class TodoRepository {
   ) {}
 
   create(description: string, dueDatetime: Date): Todo {
-    return this.repo.create({ description, dueDatetime });
+    return this.repo.create({ description, dueDatetime, status: TodoStatus.NOT_DONE });
   }
 
   save(todo: Todo): Promise<Todo> {

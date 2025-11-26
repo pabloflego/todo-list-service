@@ -44,13 +44,13 @@ describe('TodoRepository', () => {
     it('should create a todo instance', () => {
       const description = 'Test Todo';
       const dueDatetime = new Date();
-      const expectedTodo = { description, dueDatetime } as Todo;
+      const expectedTodo = { description, dueDatetime, status: TodoStatus.NOT_DONE } as Todo;
       
       mockTypeOrmRepository.create.mockReturnValue(expectedTodo);
 
       const result = repository.create(description, dueDatetime);
 
-      expect(mockTypeOrmRepository.create).toHaveBeenCalledWith({ description, dueDatetime });
+      expect(mockTypeOrmRepository.create).toHaveBeenCalledWith({ description, dueDatetime, status: TodoStatus.NOT_DONE });
       expect(result).toEqual(expectedTodo);
     });
   });
