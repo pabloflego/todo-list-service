@@ -1,11 +1,31 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { LessThan } from 'typeorm';
 import { TodoRepository } from './todo.repository';
 import { TodoStatus } from './todo-status.enum';
 import { Todo } from './todo.entity';
 
 @Injectable()
-export class TodoService {
+export class TodoService implements OnModuleInit, OnModuleDestroy {
+  private pastDueSweepTimer: NodeJS.Timeout | null = null;
+  private static readonly PAST_DUE_SWEEP_INTERVAL_MS = 30_000;
+
   constructor(private readonly todoRepo: TodoRepository) {}
+
+  onModuleInit(): void {
+    if (this.pastDueSweepTimer) return;
+
+    this.pastDueSweepTimer = setInterval(() => {
+      void this.runPastDueSweep().catch(() => undefined);
+    }, TodoService.PAST_DUE_SWEEP_INTERVAL_MS);
+
+    this.pastDueSweepTimer.unref?.();
+  }
+
+  onModuleDestroy(): void {
+    if (!this.pastDueSweepTimer) return;
+    clearInterval(this.pastDueSweepTimer);
+    this.pastDueSweepTimer = null;
+  }
 
   async add(description: string, dueDatetime: Date): Promise<Todo> {
     const todo = this.todoRepo.create(description, dueDatetime);
@@ -77,5 +97,20 @@ export class TodoService {
       return this.todoRepo.save({...todo, status: TodoStatus.PAST_DUE });
     }
     return todo;
+  }
+
+  async runPastDueSweep(now: Date = new Date()): Promise<number> {
+    const overdueTodos = await this.todoRepo.findBy({
+      status: TodoStatus.NOT_DONE,
+      dueDatetime: LessThan(now),
+    });
+
+    if (overdueTodos.length === 0) {
+      return 0;
+    }
+
+    const updatedTodos = overdueTodos.map(todo => ({ ...todo, status: TodoStatus.PAST_DUE }));
+    await this.todoRepo.saveMany(updatedTodos);
+    return updatedTodos.length;
   }
 }

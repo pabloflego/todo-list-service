@@ -283,4 +283,41 @@ describe('TodoService', () => {
       await expect(service.markNotDone(id)).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('runPastDueSweep', () => {
+    it('should flip overdue NOT_DONE todos to PAST_DUE', async () => {
+      const pastDate = new Date(Date.now() - 10000);
+      const overdueTodos = [
+        { id: '1', status: TodoStatus.NOT_DONE, dueDatetime: pastDate } as Todo,
+        { id: '2', status: TodoStatus.NOT_DONE, dueDatetime: pastDate } as Todo,
+      ];
+
+      mockTodoRepository.findBy.mockResolvedValue(overdueTodos);
+      mockTodoRepository.saveMany.mockResolvedValue([
+        { ...overdueTodos[0], status: TodoStatus.PAST_DUE },
+        { ...overdueTodos[1], status: TodoStatus.PAST_DUE },
+      ]);
+
+      const updatedCount = await service.runPastDueSweep();
+
+      expect(mockTodoRepository.findBy).toHaveBeenCalledWith(expect.objectContaining({
+        status: TodoStatus.NOT_DONE,
+        dueDatetime: expect.anything(),
+      }));
+      expect(mockTodoRepository.saveMany).toHaveBeenCalledWith([
+        { ...overdueTodos[0], status: TodoStatus.PAST_DUE },
+        { ...overdueTodos[1], status: TodoStatus.PAST_DUE },
+      ]);
+      expect(updatedCount).toBe(2);
+    });
+
+    it('should be idempotent when no overdue todos are found', async () => {
+      mockTodoRepository.findBy.mockResolvedValue([]);
+
+      const updatedCount = await service.runPastDueSweep();
+
+      expect(updatedCount).toBe(0);
+      expect(mockTodoRepository.saveMany).not.toHaveBeenCalled();
+    });
+  });
 });
