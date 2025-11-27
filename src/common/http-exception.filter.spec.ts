@@ -1,4 +1,4 @@
-import { ArgumentsHost, BadRequestException, NotFoundException } from '@nestjs/common';
+import { ArgumentsHost, BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { QueryFailedError } from 'typeorm';
 import { HttpExceptionFilter } from './http-exception.filter';
@@ -104,5 +104,27 @@ describe('HttpExceptionFilter', () => {
       }),
       400,
     );
+  });
+
+  it('should log the error in production', () => {
+    const filter = new HttpExceptionFilter(httpAdapterHost);
+    const exception = new NotFoundException('Todo not found');
+    const originalEnv = process.env.NODE_ENV;
+    const errorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+
+    process.env.NODE_ENV = 'production';
+    try {
+      filter.catch(exception, createArgsHost());
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('GET /todos/123 -> 404'),
+        expect.any(String),
+      );
+    } finally {
+      if (originalEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = originalEnv;
+      }
+    }
   });
 });

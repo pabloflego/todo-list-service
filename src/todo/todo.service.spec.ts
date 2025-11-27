@@ -231,6 +231,23 @@ describe('TodoService', () => {
 
       await expect(service.updateDescription(id, newDescription)).rejects.toThrow(NotFoundException);
     });
+
+    it('should log and rethrow when updating description fails to save', async () => {
+      const id = '1';
+      const newDescription = 'Updated';
+      const todo = { id, description: 'Old', status: TodoStatus.NOT_DONE, dueDatetime: new Date(Date.now() + 10000) } as Todo;
+      const error = new Error('save failed');
+
+      mockTodoRepository.findById.mockResolvedValue(todo);
+      mockTodoRepository.save.mockRejectedValue(error);
+      const errorSpy = vi.spyOn(Logger.prototype, 'error');
+
+      await expect(service.updateDescription(id, newDescription)).rejects.toThrow('save failed');
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`Failed to update description for todo ${id}`),
+        expect.any(String),
+      );
+    });
   });
 
   describe('markDone', () => {
@@ -270,6 +287,22 @@ describe('TodoService', () => {
 
       await expect(service.markDone(id)).rejects.toThrow(NotFoundException);
     });
+
+    it('should log and rethrow when marking done fails to save', async () => {
+      const id = '1';
+      const todo = { id, status: TodoStatus.NOT_DONE, dueDatetime: new Date(Date.now() + 10000) } as Todo;
+      const error = new Error('save failed');
+
+      mockTodoRepository.findById.mockResolvedValue(todo);
+      mockTodoRepository.save.mockRejectedValue(error);
+      const errorSpy = vi.spyOn(Logger.prototype, 'error');
+
+      await expect(service.markDone(id)).rejects.toThrow('save failed');
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`Failed to mark todo ${id} as done`),
+        expect.any(String),
+      );
+    });
   });
 
   describe('markNotDone', () => {
@@ -308,6 +341,22 @@ describe('TodoService', () => {
       mockTodoRepository.findById.mockResolvedValue(null);
 
       await expect(service.markNotDone(id)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should log and rethrow when marking not done fails to save', async () => {
+      const id = '1';
+      const todo = { id, status: TodoStatus.DONE, doneDatetime: new Date(), dueDatetime: new Date(Date.now() + 10000) } as Todo;
+      const error = new Error('save failed');
+
+      mockTodoRepository.findById.mockResolvedValue(todo);
+      mockTodoRepository.save.mockRejectedValue(error);
+      const errorSpy = vi.spyOn(Logger.prototype, 'error');
+
+      await expect(service.markNotDone(id)).rejects.toThrow('save failed');
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.stringContaining(`Failed to mark todo ${id} as not done`),
+        expect.any(String),
+      );
     });
   });
 
