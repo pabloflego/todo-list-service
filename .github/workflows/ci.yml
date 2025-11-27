@@ -24,11 +24,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Type check
+      - name: Types Check
         run: pnpm check
 
-      - name: Unit test + Coverage
-        run: pnpm test:unit:coverage
+      - name: Unit Tests
+        run: pnpm test:unit
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
@@ -36,7 +36,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
 
-      - name: E2E tests
+      - name: E2E Tests
         run: pnpm test:e2e
 
       - name: Build Docker image
