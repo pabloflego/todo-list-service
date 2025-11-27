@@ -27,10 +27,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const { status, body } = this.buildResponse(exception);
 
-    this.logger.error(
-      `[${requestId ?? 'n/a'}] ${method} ${path} -> ${status}`,
-      exception instanceof Error ? exception.stack : undefined,
-    );
+    if (process.env.NODE_ENV !== 'test') {
+      this.logger.error(
+        `[${requestId ?? 'n/a'}] ${method} ${path} -> ${status}`,
+        exception instanceof Error ? exception.stack : undefined,
+      );
+    }
 
     httpAdapter.reply(ctx.getResponse(), {
       ...body,
