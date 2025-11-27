@@ -1,8 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, Logger, ValidationPipe } from '@nestjs/common';
+import { HttpAdapterHost } from '@nestjs/core';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { TodoStatus } from '../src/todo/todo-status.enum';
+import { HttpExceptionFilter } from '../src/common/http-exception.filter';
+import { requestLogger } from '../src/common/request-logger.middleware';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 describe('Todo REST API (E2E)', () => {
@@ -19,6 +22,16 @@ describe('Todo REST API (E2E)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    app.use(requestLogger(new Logger('HTTP')));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    const httpAdapterHost = app.get(HttpAdapterHost);
+    app.useGlobalFilters(new HttpExceptionFilter(httpAdapterHost));
     await app.init();
   });
 
@@ -54,6 +67,23 @@ describe('Todo REST API (E2E)', () => {
       });
       expect(response.body.id).toBeDefined();
       expect(response.body.creationDatetime).toBeDefined();
+    });
+
+    it('should validate request body and return 400 with error shape', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/todos')
+        .send({
+          description: '',
+          dueDatetime: 'not-a-date',
+        })
+        .expect(400);
+
+      expect(response.body.statusCode).toBe(400);
+      expect(response.body.error).toBe('Bad Request');
+      expect(Array.isArray(response.body.message)).toBe(true);
+      expect(response.body.path).toBe('/todos');
+      expect(response.body.method).toBe('POST');
+      expect(response.body.requestId).toBeDefined();
     });
   });
 
