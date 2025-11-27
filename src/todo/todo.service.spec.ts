@@ -10,7 +10,6 @@ describe('TodoService', () => {
   let mockTodoRepository: {
     create: ReturnType<typeof vi.fn>;
     save: ReturnType<typeof vi.fn>;
-    saveMany: ReturnType<typeof vi.fn>;
     findById: ReturnType<typeof vi.fn>;
     findAll: ReturnType<typeof vi.fn>;
     findBy: ReturnType<typeof vi.fn>;
@@ -20,7 +19,6 @@ describe('TodoService', () => {
     mockTodoRepository = {
       create: vi.fn(),
       save: vi.fn(),
-      saveMany: vi.fn(),
       findById: vi.fn(),
       findAll: vi.fn(),
       findBy: vi.fn(),
@@ -82,10 +80,12 @@ describe('TodoService', () => {
       const result = await service.getOne(id);
 
       expect(mockTodoRepository.findById).toHaveBeenCalledWith(id);
-      expect(mockTodoRepository.save).toHaveBeenCalledWith(expect.objectContaining({
-        id,
-        status: TodoStatus.PAST_DUE
-      }));
+      expect(mockTodoRepository.save).toHaveBeenCalledWith([
+        expect.objectContaining({
+          id,
+          status: TodoStatus.PAST_DUE
+        })
+      ]);
       expect(result).toEqual(updatedTodo);
     });
 
@@ -135,16 +135,18 @@ describe('TodoService', () => {
       ] as Todo[];
 
       mockTodoRepository.findAll.mockResolvedValue(todos);
-      mockTodoRepository.saveMany.mockResolvedValue([{ ...todos[0], status: TodoStatus.PAST_DUE }]);
+      mockTodoRepository.save.mockResolvedValue({ ...todos[0], status: TodoStatus.PAST_DUE });
 
       const result = await service.getAll(true);
 
-      expect(mockTodoRepository.saveMany).toHaveBeenCalledWith([
-        expect.objectContaining({
-          id: '1',
-          status: TodoStatus.PAST_DUE
-        })
-      ]);
+      expect(mockTodoRepository.save).toHaveBeenCalledWith(
+        [
+          expect.objectContaining({
+            id: '1',
+            status: TodoStatus.PAST_DUE
+          })
+        ]
+      );
       expect(result[0].status).toBe(TodoStatus.PAST_DUE);
       expect(result[1]).toEqual(todos[1]);
     });
@@ -160,7 +162,7 @@ describe('TodoService', () => {
       ] as Todo[];
 
       mockTodoRepository.findAll.mockResolvedValue(todos);
-      mockTodoRepository.saveMany.mockResolvedValue([
+      mockTodoRepository.save.mockResolvedValue([
         { ...todos[0], status: TodoStatus.PAST_DUE },
         { ...todos[1], status: TodoStatus.PAST_DUE }
       ]);
@@ -300,7 +302,7 @@ describe('TodoService', () => {
       ];
 
       mockTodoRepository.findBy.mockResolvedValue(overdueTodos);
-      mockTodoRepository.saveMany.mockResolvedValue([
+      mockTodoRepository.save.mockResolvedValue([
         { ...overdueTodos[0], status: TodoStatus.PAST_DUE },
         { ...overdueTodos[1], status: TodoStatus.PAST_DUE },
       ]);
@@ -311,7 +313,7 @@ describe('TodoService', () => {
         status: TodoStatus.NOT_DONE,
         dueDatetime: expect.anything(),
       }));
-      expect(mockTodoRepository.saveMany).toHaveBeenCalledWith([
+      expect(mockTodoRepository.save).toHaveBeenCalledWith([
         { ...overdueTodos[0], status: TodoStatus.PAST_DUE },
         { ...overdueTodos[1], status: TodoStatus.PAST_DUE },
       ]);
@@ -324,7 +326,7 @@ describe('TodoService', () => {
       const updatedCount = await service.runPastDueSweep();
 
       expect(updatedCount).toBe(0);
-      expect(mockTodoRepository.saveMany).not.toHaveBeenCalled();
+      expect(mockTodoRepository.save).not.toHaveBeenCalled();
     });
   });
 });

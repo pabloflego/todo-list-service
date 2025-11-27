@@ -38,7 +38,7 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
     if (!todo) {
       throw new NotFoundException(`Todo ${id} not found`);
     }
-    return this.recalculatePastDue(todo);
+    return this.applyPastDue(todo);
   }
 
   async getAll(includeAll?: boolean): Promise<Todo[]> {
@@ -46,7 +46,7 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
       ? await this.todoRepo.findAll()
       : await this.todoRepo.findBy({ status: TodoStatus.NOT_DONE });
 
-    return this.updatePastDueBatch(todos);
+    return this.applyPastDue(todos);
   }
 
   async updateDescription(id: string, description: string): Promise<Todo> {
@@ -67,31 +67,29 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
     return this.todoRepo.save({...todo, status: TodoStatus.NOT_DONE, doneDatetime: null});
   }
 
-  private async updatePastDueBatch(todos: Todo[]): Promise<Todo[]> {
+  private async applyPastDue(todo: Todo): Promise<Todo>;
+  private async applyPastDue(todos: Todo[]): Promise<Todo[]>;
+  private async applyPastDue(todos: Todo | Todo[]): Promise<Todo | Todo[]> {
     const now = new Date();
+    const isSingle = !Array.isArray(todos);
     const todosToUpdate: Todo[] = [];
     const updateMap = new Map<string, Todo>();
 
-    for (const todo of todos) {
+    const list = isSingle ? [todos] : todos;
+    for (const todo of list) {
       if (todo.status === TodoStatus.NOT_DONE && now > todo.dueDatetime) {
-        const updatedTodo = {...todo, status: TodoStatus.PAST_DUE };
+        const updatedTodo = { ...todo, status: TodoStatus.PAST_DUE };
         todosToUpdate.push(updatedTodo);
         updateMap.set(todo.id, updatedTodo);
       }
     }
 
     if (todosToUpdate.length > 0) {
-      await this.todoRepo.saveMany(todosToUpdate);
+      await this.todoRepo.save(todosToUpdate);
     }
 
-    return todos.map(todo => updateMap.get(todo.id) || todo);
-  }
-
-  private async recalculatePastDue(todo: Todo): Promise<Todo> {
-    if (todo.status === TodoStatus.NOT_DONE && new Date() > todo.dueDatetime) {
-      return this.todoRepo.save({...todo, status: TodoStatus.PAST_DUE });
-    }
-    return todo;
+    const result = list.map(todo => updateMap.get(todo.id) || todo);
+    return isSingle ? result[0] : result;
   }
 
   private guardPastDueMutation(todo: Todo): void {
@@ -117,7 +115,7 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
     }
 
     const updatedTodos = overdueTodos.map(todo => ({ ...todo, status: TodoStatus.PAST_DUE }));
-    await this.todoRepo.saveMany(updatedTodos);
+    await this.todoRepo.save(updatedTodos);
     return updatedTodos.length;
   }
 }

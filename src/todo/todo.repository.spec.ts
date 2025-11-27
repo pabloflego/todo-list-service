@@ -65,9 +65,7 @@ describe('TodoRepository', () => {
       expect(mockTypeOrmRepository.save).toHaveBeenCalledWith(todo);
       expect(result).toEqual(todo);
     });
-  });
 
-  describe('saveMany', () => {
     it('should save multiple todos', async () => {
       const todos = [
         { id: '1', description: 'Test 1' } as Todo,
@@ -75,7 +73,7 @@ describe('TodoRepository', () => {
       ];
       mockTypeOrmRepository.save.mockResolvedValue(todos);
 
-      const result = await repository.saveMany(todos);
+      const result = await repository.save(todos);
 
       expect(mockTypeOrmRepository.save).toHaveBeenCalledWith(todos);
       expect(result).toEqual(todos);

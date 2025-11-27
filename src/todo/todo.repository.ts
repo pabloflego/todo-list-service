@@ -15,12 +15,13 @@ export class TodoRepository {
     return this.repo.create({ description, dueDatetime, status: TodoStatus.NOT_DONE });
   }
 
-  save(todo: Todo): Promise<Todo> {
-    return this.repo.save(todo);
-  }
-
-  saveMany(todos: Todo[]): Promise<Todo[]> {
-    return this.repo.save(todos);
+  save(todo: Todo): Promise<Todo>;
+  save(todos: Todo[]): Promise<Todo[]>;
+  save(todoOrTodos: Todo | Todo[]): Promise<Todo | Todo[]> {
+    if (Array.isArray(todoOrTodos)) {
+      return this.repo.save(todoOrTodos);
+    }
+    return this.repo.save(todoOrTodos);
   }
 
   findById(id: string): Promise<Todo | null> {
