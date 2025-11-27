@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { TodoService } from './todo.service';
 import { TodoRepository } from './todo.repository';
 import { Todo } from './todo.entity';
@@ -24,6 +24,10 @@ describe('TodoService', () => {
       findBy: vi.fn(),
     };
 
+    vi.spyOn(Logger.prototype, 'log').mockImplementation(() => undefined);
+    vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    vi.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
+
     service = new TodoService(mockTodoRepository as unknown as TodoRepository);
   });
 
@@ -45,6 +49,20 @@ describe('TodoService', () => {
       expect(mockTodoRepository.create).toHaveBeenCalledWith(description, dueDatetime);
       expect(mockTodoRepository.save).toHaveBeenCalledWith(todo);
       expect(result).toEqual(todo);
+    });
+
+    it('should log and rethrow on save failure', async () => {
+      const description = 'Test Todo';
+      const dueDatetime = new Date();
+      const todo = { id: '1', description, dueDatetime } as Todo;
+
+      mockTodoRepository.create.mockReturnValue(todo);
+      mockTodoRepository.save.mockRejectedValue(new Error('fail'));
+
+      const errorSpy = vi.spyOn(Logger.prototype, 'error');
+
+      await expect(service.add(description, dueDatetime)).rejects.toThrow('fail');
+      expect(errorSpy).toHaveBeenCalled();
     });
 
     it('should throw BadRequestException for invalid dueDatetime', async () => {

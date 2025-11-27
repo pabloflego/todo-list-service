@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { LessThan } from 'typeorm';
 import { TodoRepository } from './todo.repository';
 import { TodoStatus } from './todo-status.enum';
@@ -7,7 +7,8 @@ import { Todo } from './todo.entity';
 @Injectable()
 export class TodoService implements OnModuleInit, OnModuleDestroy {
   private pastDueSweepTimer: NodeJS.Timeout | null = null;
-  private static readonly PAST_DUE_SWEEP_INTERVAL_MS = 30_000;
+  private static readonly PAST_DUE_SWEEP_INTERVAL_MS = 60_000;
+  private readonly logger = new Logger(TodoService.name);
 
   constructor(private readonly todoRepo: TodoRepository) {}
 
@@ -15,7 +16,9 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
     if (this.pastDueSweepTimer) return;
 
     this.pastDueSweepTimer = setInterval(() => {
-      void this.runPastDueSweep().catch(() => undefined);
+      void this.runPastDueSweep().catch((err) => {
+        this.logger.error('Past-due sweep failed', err.stack);
+      });
     }, TodoService.PAST_DUE_SWEEP_INTERVAL_MS);
 
     this.pastDueSweepTimer.unref?.();
@@ -30,12 +33,18 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
   async add(description: string, dueDatetime: Date): Promise<Todo> {
     this.ensureValidDate(dueDatetime, 'dueDatetime');
     const todo = this.todoRepo.create(description, dueDatetime);
-    return this.todoRepo.save(todo);
+    try {
+      return await this.todoRepo.save(todo);
+    } catch (err) {
+      this.logger.error(`Failed to add todo "${description}"`, err instanceof Error ? err.stack : undefined);
+      throw err;
+    }
   }
 
   async getOne(id: string): Promise<Todo> {
     const todo = await this.todoRepo.findById(id);
     if (!todo) {
+      this.logger.debug(`Todo ${id} not found`);
       throw new NotFoundException(`Todo ${id} not found`);
     }
     return this.applyPastDue(todo);
@@ -52,19 +61,34 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
   async updateDescription(id: string, description: string): Promise<Todo> {
     const todo = await this.getOne(id);
     this.guardPastDueMutation(todo);
-    return this.todoRepo.save({...todo, description});
+    try {
+      return await this.todoRepo.save({ ...todo, description });
+    } catch (err) {
+      this.logger.error(`Failed to update description for todo ${id}`, err instanceof Error ? err.stack : undefined);
+      throw err;
+    }
   }
 
   async markDone(id: string): Promise<Todo> {
     const todo = await this.getOne(id);
     this.guardPastDueMutation(todo);
-    return this.todoRepo.save({...todo, status: TodoStatus.DONE, doneDatetime: new Date()});
+    try {
+      return await this.todoRepo.save({ ...todo, status: TodoStatus.DONE, doneDatetime: new Date() });
+    } catch (err) {
+      this.logger.error(`Failed to mark todo ${id} as done`, err instanceof Error ? err.stack : undefined);
+      throw err;
+    }
   }
 
   async markNotDone(id: string): Promise<Todo> {
     const todo = await this.getOne(id);
     this.guardPastDueMutation(todo);
-    return this.todoRepo.save({...todo, status: TodoStatus.NOT_DONE, doneDatetime: null});
+    try {
+      return await this.todoRepo.save({ ...todo, status: TodoStatus.NOT_DONE, doneDatetime: null });
+    } catch (err) {
+      this.logger.error(`Failed to mark todo ${id} as not done`, err instanceof Error ? err.stack : undefined);
+      throw err;
+    }
   }
 
   private async applyPastDue(todo: Todo): Promise<Todo>;
@@ -94,6 +118,7 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
 
   private guardPastDueMutation(todo: Todo): void {
     if (todo.status === TodoStatus.PAST_DUE) {
+      this.logger.debug(`Mutation blocked for past-due todo ${todo.id}`);
       throw new BadRequestException(`Todo ${todo.id} is past due and cannot be modified`);
     }
   }
@@ -111,11 +136,14 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
     });
 
     if (overdueTodos.length === 0) {
+      this.logger.debug('Past-due sweep ran, 0 updates');
       return 0;
     }
 
     const updatedTodos = overdueTodos.map(todo => ({ ...todo, status: TodoStatus.PAST_DUE }));
     await this.todoRepo.save(updatedTodos);
-    return updatedTodos.length;
+    const updatedCount = updatedTodos.length;
+    this.logger.debug(`Past-due sweep updated ${updatedCount} todo(s)`);
+    return updatedCount;
   }
 }
