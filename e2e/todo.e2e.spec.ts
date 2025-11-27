@@ -6,10 +6,12 @@ import { AppModule } from '../src/app.module';
 import { TodoStatus } from '../src/todo/todo-status.enum';
 import { HttpExceptionFilter } from '../src/common/http-exception.filter';
 import { requestLogger } from '../src/common/request-logger.middleware';
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { DataSource } from 'typeorm';
 
 describe('Todo REST API (E2E)', () => {
   let app: INestApplication;
+  let dataSource: DataSource;
   const getFutureDate = () => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 7);
@@ -32,7 +34,12 @@ describe('Todo REST API (E2E)', () => {
     );
     const httpAdapterHost = app.get(HttpAdapterHost);
     app.useGlobalFilters(new HttpExceptionFilter(httpAdapterHost));
+    dataSource = app.get(DataSource);
     await app.init();
+  });
+
+  afterEach(async () => {
+    await dataSource.synchronize(true);
   });
 
   afterAll(async () => {
@@ -119,6 +126,13 @@ describe('Todo REST API (E2E)', () => {
     });
 
     it('should return all todos when all=true', async () => {
+      const activeTodo = await request(app.getHttpServer())
+        .post('/todos')
+        .send({
+          description: 'Active task include all',
+          dueDatetime: getFutureDate().toISOString(),
+        });
+
       const doneTodo = await request(app.getHttpServer())
         .post('/todos')
         .send({
@@ -136,7 +150,7 @@ describe('Todo REST API (E2E)', () => {
         .expect(200);
 
       const ids = response.body.map((t: any) => t.id);
-      expect(ids).toContain(doneTodo.body.id);
+      expect(ids).toEqual(expect.arrayContaining([activeTodo.body.id, doneTodo.body.id]));
       expect(response.body.some((t: any) => t.status === TodoStatus.NOT_DONE)).toBe(true);
       expect(response.body.some((t: any) => t.status === TodoStatus.DONE)).toBe(true);
     });
