@@ -48,6 +48,13 @@ describe('TodoService', () => {
       expect(mockTodoRepository.save).toHaveBeenCalledWith(todo);
       expect(result).toEqual(todo);
     });
+
+    it('should throw BadRequestException for invalid dueDatetime', async () => {
+      const description = 'Test Todo';
+      const invalidDate = new Date('not-a-date');
+
+      await expect(service.add(description, invalidDate)).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('getOne', () => {

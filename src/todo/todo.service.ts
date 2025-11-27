@@ -28,6 +28,7 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
   }
 
   async add(description: string, dueDatetime: Date): Promise<Todo> {
+    this.ensureValidDate(dueDatetime, 'dueDatetime');
     const todo = this.todoRepo.create(description, dueDatetime);
     return this.todoRepo.save(todo);
   }
@@ -46,6 +47,24 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
       : await this.todoRepo.findBy({ status: TodoStatus.NOT_DONE });
 
     return this.updatePastDueBatch(todos);
+  }
+
+  async updateDescription(id: string, description: string): Promise<Todo> {
+    const todo = await this.getOne(id);
+    this.guardPastDueMutation(todo);
+    return this.todoRepo.save({...todo, description});
+  }
+
+  async markDone(id: string): Promise<Todo> {
+    const todo = await this.getOne(id);
+    this.guardPastDueMutation(todo);
+    return this.todoRepo.save({...todo, status: TodoStatus.DONE, doneDatetime: new Date()});
+  }
+
+  async markNotDone(id: string): Promise<Todo> {
+    const todo = await this.getOne(id);
+    this.guardPastDueMutation(todo);
+    return this.todoRepo.save({...todo, status: TodoStatus.NOT_DONE, doneDatetime: null});
   }
 
   private async updatePastDueBatch(todos: Todo[]): Promise<Todo[]> {
@@ -68,22 +87,11 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
     return todos.map(todo => updateMap.get(todo.id) || todo);
   }
 
-  async updateDescription(id: string, description: string): Promise<Todo> {
-    const todo = await this.getOne(id);
-    this.guardPastDueMutation(todo);
-    return this.todoRepo.save({...todo, description});
-  }
-
-  async markDone(id: string): Promise<Todo> {
-    const todo = await this.getOne(id);
-    this.guardPastDueMutation(todo);
-    return this.todoRepo.save({...todo, status: TodoStatus.DONE, doneDatetime: new Date()});
-  }
-
-  async markNotDone(id: string): Promise<Todo> {
-    const todo = await this.getOne(id);
-    this.guardPastDueMutation(todo);
-    return this.todoRepo.save({...todo, status: TodoStatus.NOT_DONE, doneDatetime: null});
+  private async recalculatePastDue(todo: Todo): Promise<Todo> {
+    if (todo.status === TodoStatus.NOT_DONE && new Date() > todo.dueDatetime) {
+      return this.todoRepo.save({...todo, status: TodoStatus.PAST_DUE });
+    }
+    return todo;
   }
 
   private guardPastDueMutation(todo: Todo): void {
@@ -92,11 +100,10 @@ export class TodoService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async recalculatePastDue(todo: Todo): Promise<Todo> {
-    if (todo.status === TodoStatus.NOT_DONE && new Date() > todo.dueDatetime) {
-      return this.todoRepo.save({...todo, status: TodoStatus.PAST_DUE });
+  private ensureValidDate(date: Date, field: string): void {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+      throw new BadRequestException(`Invalid ${field}`);
     }
-    return todo;
   }
 
   async runPastDueSweep(now: Date = new Date()): Promise<number> {
