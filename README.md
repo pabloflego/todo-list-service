@@ -2,25 +2,56 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/pabloflego/todo-list-service/ci.yml?branch=main&label=CI)](https://github.com/pabloflego/todo-list-service/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/pabloflego/todo-list-service/branch/main/graph/badge.svg)](https://codecov.io/gh/pabloflego/todo-list-service)
 
-Backend service built with NestJS and TypeORM (SQLite) to manage to-do items with automatic past-due handling.
+## Service description and assumptions:
+- Simple Todo REST API to create, update description, mark done/undone, fetch one, and list todos (default only NOT_DONE; all=true returns all).
+- Fields: id, description, status (NOT_DONE, DONE, PAST_DUE), creation/due timestamps, done timestamp (nullable).
+- Business rules: overdue NOT_DONE → automatically becomes PAST_DUE; PAST_DUE items can’t be modified.
+- Storage: in-memory SQLite (no external DB needed); chosen over H2 to stay aligned with the Node.js/TypeORM ecosystem—adding H2 would introduce extra setup complexity without benefits here..
+- No auth; global exception filter normalizes errors and validation runs on all requests.
 
 ## Tech Stack
 - Runtime: Node.js (see `.nvmrc` for version)
 - Framework: NestJS (HTTP + Swagger)
-- Persistence: SQLite (in-memory by default via TypeORM); chosen over H2 to stay aligned with the Node.js/TypeORM ecosystem—adding H2 would introduce extra setup complexity without benefits here.
+- Persistence: SQLite (in-memory by default via TypeORM)
 - Testing: Vitest (unit + e2e), Supertest
 - Docker: Multi-stage build, prod image runs compiled app
 
-## Quick Start
+## Environment Setup
+### Prerequisites:
+- Clone this repository: git clone https://github.com/pabloflego/todo-list-service.git
+- Node: use the version in `.nvmrc` (`nvm use` or `fnm use`), which matches the Docker image. Install Node via [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm) if you don't have a manager.
+- Package manager: `corepack enable` then `pnpm install` (pnpm version is pinned in `package.json`) or `npm i -g pnpm@10.23.0`.
+  - Note: if you get a 'Cannot find matching keyid' error with corepack try updating corepack: `npm i -g corepack@latest` then `pnpm install` again
+- Docker: For Production image builds
+
+### Development
 ```bash
 pnpm install
-pnpm test:all       # unit + e2e
+pnpm dev            # watch mode
+```
+Note: by default the service runs at `http://localhost:3000`
+
+### Testing
+```bash
+pnpm test:all       # Run unit + e2e (without coverage)
+pnpm test:unit      # Unit tests + coverage
+pnpm watch:unit     # Unit tests in watch mode (without coverage)
+pnpm test:e2e       # E2E tests + coverage
+pnpm watch:e2e      # E2E tests in watch mode (without coverage)
+pnpm check          # Type Checks
+```
+
+### Build Production Image & Deploy Container
+```bash
+pnpm docker:up      # Builds and Deploys Production container
+pnpm docker:down    # Kill and remove the container
+pnpm docker:build   # (Re)builds production image
+```
+
+### Running Production build locally
+```bash
 pnpm build          # production build
 pnpm start          # runs dist build
-pnpm dev            # watch mode
-pnpm docker:up      # Builds and brings up Production container
-pnpm docker:down    # Kill and remove the container
-pnpm docker:build   # Build container
 ```
 
 ## Swagger / OpenAPI
@@ -31,4 +62,4 @@ pnpm docker:build   # Build container
 - `PORT` (default: 3000)
 
 ## CI
-GitHub Actions workflow runs type-check and Docker build.
+GitHub Actions workflow runs Unit Tests, E2E Tests, TS Type-Check and Builds Production Docker image.
