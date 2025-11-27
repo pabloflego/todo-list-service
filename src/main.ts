@@ -3,12 +3,16 @@ import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, LogLevel, ValidationPipe } from '@nestjs/common';
 import { requestLogger } from './common/request-logger.middleware';
 import { HttpExceptionFilter } from './common/http-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const loggerLevels: LogLevel[] = process.env.NODE_ENV === 'production'
+      ? ['error', 'warn', 'log']
+      : ['verbose', 'debug', 'error', 'warn', 'log'];
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: loggerLevels });
   const logger = new Logger('HTTP');
 
   app.use(requestLogger(logger));
