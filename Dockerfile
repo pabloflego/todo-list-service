@@ -1,5 +1,5 @@
 # Build stage
-FROM node:24.11.1-alpine AS builder
+FROM node:22.11.0-alpine AS builder
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ COPY . .
 RUN pnpm build
 
 # Production stage
-FROM node:24.11.1-alpine AS production
+FROM node:22.11.0-alpine AS production
 
 # Install wget for healthcheck
 RUN apk add --no-cache wget
