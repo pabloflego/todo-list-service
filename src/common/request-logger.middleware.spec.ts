@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { requestLogger } from './request-logger.middleware';
+import { describe, expect, it, vi } from 'vitest';
 
 const createMocks = () => {
   const req: any = {
