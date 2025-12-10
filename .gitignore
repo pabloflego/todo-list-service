@@ -3,3 +3,5 @@ dist
 coverage
 scratches
 .DS_STORE
+.env
+.direnv
